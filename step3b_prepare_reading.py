@@ -33,7 +33,10 @@ BATCH_SIZE = 20
 # Pages given to the reader for this step, and how much of each (in
 # characters, after repeated lines are removed). News is left out here;
 # Step 4 reads it when looking for signals.
-PAGES_TO_READ = {"home": 5000, "about": 6000, "products": 3000, "careers": 6000}
+PAGES_TO_READ = {"home": 6000, "about": 6000, "products": 3000, "careers": 6000}
+
+# Pages that are mostly menus and product lists.
+MENU_HEAVY_PAGES = {"home", "products"}
 
 
 def load_settings():
@@ -54,11 +57,19 @@ def company_packet(company_name, website, pages):
         lines = text.split("\n")[2:]  # skip the "SOURCE:" line and the blank after it
 
         # Keep only lines not already shown from an earlier page of this site.
+        # On home and products pages, also drop very short lines: these are
+        # almost always menu items and product names ("Shop", "Cart", "Kale
+        # Seeds"), not statements about the company. About and careers pages
+        # are kept in full, because a job title can be a short line.
+        # (The quote check later still uses the complete saved page.)
         fresh = []
         for line in lines:
-            if line not in seen_lines and len(line) > 2:
-                fresh.append(line)
-                seen_lines.add(line)
+            if line in seen_lines or len(line) <= 2:
+                continue
+            seen_lines.add(line)
+            if kind in MENU_HEAVY_PAGES and len(line.split()) < 5:
+                continue
+            fresh.append(line)
         body = "\n".join(fresh)
 
         note = ""

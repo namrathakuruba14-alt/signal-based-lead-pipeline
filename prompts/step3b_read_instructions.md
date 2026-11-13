@@ -21,7 +21,9 @@ text**.
    from the company name, or use anything you know from elsewhere.
 3. **Never estimate size.** Only record a size clue if the page states a
    number or fact. No "probably small" or "looks like a large company".
-4. Keep each quote short: one sentence or one line is enough.
+4. Keep each quote short: one sentence or one line is enough. A quote can
+   be part of a line. Where you can, pick a quote that does not contain a
+   person's name.
 5. Ignore recall notices when deciding what the company makes or who makes
    it, unless nothing else on the site says it.
 
@@ -35,10 +37,11 @@ text**.
 ### who_makes_it
 Does the company make the food itself?
 - `answer`: exactly one of
-  - `manufactures itself` - the page says they make, produce, bake, roast,
-    process or pack the product in their own facility
+  - `manufactures itself` - the page says they make, produce, bake, roast
+    or process the product in their own facility
   - `co-packed` - the page says another company makes it for them
-  - `distributor` - they import, distribute or wholesale products made by others
+  - `distributor` - they import, distribute, wholesale or repack products
+    made or grown by others
   - `retailer` - they are a shop, grocery chain, restaurant or cafe
   - blank - the page does not make it clear
 - `quote`: the line that shows it.
