@@ -65,7 +65,8 @@ clean:
 # plus its city/state or zip code. Otherwise: "not found".
 find_website:
   # How many companies to process per run (newest signal first)
-  companies_per_run: 100
+  # Companies already checked in an earlier run are skipped, not re-visited.
+  companies_per_run: 500
   # Address endings to try
   domain_endings:
     - ".com"
@@ -82,8 +83,10 @@ find_website:
     - "international"
     - "usa"
     - "holdings"
-  # Besides the home page, look at up to this many "contact"/"about" pages
-  extra_pages_per_site: 2
+  # Besides the home page, look at up to this many other pages:
+  # contact, locations, about, then privacy and terms (which often carry
+  # the legal address)
+  extra_pages_per_site: 4
 
 # ---------- 2. WHAT do we offer them? ----------
 # Used by the "Judge" step to decide fit / maybe / no.

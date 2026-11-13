@@ -18,7 +18,10 @@ Being polite:
     - It identifies itself honestly to websites.
     - It obeys each site's robots.txt (the site's rules for programs).
     - It waits between visits to the same site (see settings.yaml).
-    - It looks at 3 pages per site at most.
+    - It looks at 5 pages per site at most, and stops as soon as it has proof.
+    - If a site refuses automated visitors, it records that and moves on.
+      It never tries to get around a block.
+    - Companies checked in an earlier run are skipped, not visited again.
 
 How to run it:
     python step3a_find_websites.py        (uses the number in settings.yaml)
@@ -127,19 +130,35 @@ def domain_exists(domain):
 # ----------------------------------------------------------------------
 
 def get_page(url, settings):
-    """Download one web page. Returns the response, or None if it failed."""
+    """
+    Download one web page.
+    Returns (response, "") if it worked, or (None, the exact reason) if not.
+    If a site refuses us, we record that and move on. We never try to
+    get around a block.
+    """
+    timeout = settings["politeness"]["timeout_seconds"]
     try:
         response = requests.get(
-            url,
-            headers={"User-Agent": USER_AGENT},
-            timeout=settings["politeness"]["timeout_seconds"],
+            url, headers={"User-Agent": USER_AGENT}, timeout=timeout
         )
-    except requests.RequestException:
-        return None
-    is_html = "html" in response.headers.get("Content-Type", "")
-    if response.status_code != 200 or not is_html:
-        return None
-    return response
+    except requests.exceptions.SSLError:
+        return None, "security certificate problem"
+    except requests.exceptions.Timeout:
+        return None, f"too slow, gave up after {timeout} seconds"
+    except requests.exceptions.TooManyRedirects:
+        return None, "redirects in a loop"
+    except requests.exceptions.ConnectionError:
+        return None, "connection failed (no working website at this address)"
+    except requests.RequestException as error:
+        return None, f"request failed ({type(error).__name__})"
+
+    if response.status_code in (401, 403, 429):
+        return None, f"site refused automated visitors (code {response.status_code})"
+    if response.status_code != 200:
+        return None, f"site answered with error code {response.status_code}"
+    if "html" not in response.headers.get("Content-Type", ""):
+        return None, "address does not return a normal web page"
+    return response, ""
 
 
 def read_robots(site_root, settings):
@@ -169,19 +188,32 @@ def page_text(response):
     return soup, text
 
 
-def contact_links(soup, page_url, limit):
-    """Find links on the page that look like a Contact or About page."""
+# Pages that often show a company's address, most useful first.
+# Privacy and terms pages usually carry the legal address.
+ADDRESS_PAGE_WORDS = ["contact", "location", "about", "privacy", "terms", "legal"]
+
+
+def address_page_links(soup, page_url, limit):
+    """Find links that look like Contact, About, Privacy or Terms pages."""
     site = urlparse(page_url).netloc
-    found = []
+    found = {}  # url -> how useful (0 = most useful)
     for link in soup.find_all("a", href=True):
         label = (link.get_text(" ") + " " + link["href"]).lower()
-        if not any(word in label for word in ("contact", "about", "location")):
+        ranks = [i for i, word in enumerate(ADDRESS_PAGE_WORDS) if word in label]
+        if not ranks:
             continue
         url = urljoin(page_url, link["href"]).split("#")[0]
         # Stay on the same website, and don't repeat pages.
-        if urlparse(url).netloc == site and url != page_url and url not in found:
-            found.append(url)
-    return found[:limit]
+        if urlparse(url).netloc == site and url != page_url:
+            found[url] = min(ranks[0], found.get(url, 99))
+
+    # Most useful kind first; at most one page of each kind.
+    chosen, kinds_used = [], set()
+    for url, rank in sorted(found.items(), key=lambda item: item[1]):
+        if rank not in kinds_used:
+            chosen.append(url)
+            kinds_used.add(rank)
+    return chosen[:limit]
 
 
 # ----------------------------------------------------------------------
@@ -246,9 +278,9 @@ def check_site(domain, name, company, settings):
         return result
 
     time.sleep(wait)
-    home = get_page("https://" + domain, settings)
+    home, reason = get_page("https://" + domain, settings)
     if home is None:
-        result["note"] = f"{domain}: exists but the page could not be read"
+        result["note"] = f"{domain}: could not be read - {reason}"
         return result
 
     # The address may redirect somewhere else. Never use a blocked site.
@@ -262,7 +294,7 @@ def check_site(domain, name, company, settings):
     name_seen = find_name(text, name)
 
     # Check the home page first; only open more pages if we need to.
-    to_visit = contact_links(soup, home.url, settings["find_website"]["extra_pages_per_site"])
+    to_visit = address_page_links(soup, home.url, settings["find_website"]["extra_pages_per_site"])
     while True:
         url, text = pages[-1]
         name_seen = name_seen or find_name(text, name)
@@ -281,7 +313,7 @@ def check_site(domain, name, company, settings):
             candidate = to_visit.pop(0)
             if rules.can_fetch(USER_AGENT, candidate):
                 time.sleep(wait)
-                next_page = get_page(candidate, settings)
+                next_page, _ = get_page(candidate, settings)
         if next_page is None:
             break
         pages.append((next_page.url, page_text(next_page)[1]))
@@ -327,9 +359,26 @@ def main():
     with open(folder / "step2_companies_clean.csv", encoding="utf-8-sig") as f:
         companies = list(csv.DictReader(f))[:how_many]
 
-    print(f"Step 3a: looking for websites for {len(companies)} companies")
-    found = 0
+    # Companies checked in an earlier run are kept as they are and skipped,
+    # so we never visit the same websites twice for no reason.
+    path = folder / "step3a_websites.csv"
+    done = {}
+    if path.exists():
+        with open(path, encoding="utf-8-sig") as f:
+            for row in csv.DictReader(f):
+                done[(row["company_name"], row["state"])] = row
+
+    todo = sum(1 for c in companies if (c["company_name"], c["state"]) not in done)
+    print(f"Step 3a: {len(companies)} companies, {len(companies) - todo} "
+          f"already checked, {todo} to do")
+
+    results = []
     for number, company in enumerate(companies, start=1):
+        key = (company["company_name"], company["state"])
+        if key in done:
+            results.append(done[key])
+            continue
+
         try:
             result = find_website(company, settings)
         except Exception as error:  # one bad site must not stop the whole run
@@ -340,20 +389,24 @@ def main():
         company["website_evidence"] = result.get("website_evidence", missing)
         company["website_evidence_page"] = result.get("website_evidence_page", missing)
         company["website_note"] = result["note"] or missing
+        results.append(company)
 
-        if company["website"] != missing:
-            found += 1
         print(f"  {number}/{len(companies)} {company['company_name']}: "
               f"{company['website']}  {result['note']}", flush=True)
 
-    path = folder / "step3a_websites.csv"
-    with open(path, "w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.DictWriter(f, fieldnames=list(companies[0].keys()))
-        writer.writeheader()
-        writer.writerows(companies)
+        # Save after every company, so nothing is lost if the run is interrupted.
+        # (Companies not reached yet are simply not in the file.)
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.DictWriter(f, fieldnames=list(results[0].keys()))
+            writer.writeheader()
+            writer.writerows(results + [
+                done[k] for k in done
+                if k not in {(r["company_name"], r["state"]) for r in results}
+            ])
 
-    print(f"\nVerified a website for {found} of {len(companies)} companies "
-          f"({found / len(companies):.0%}).")
+    found = sum(1 for r in results if r["website"] != missing)
+    print(f"\nVerified a website for {found} of {len(results)} companies "
+          f"({found / len(results):.0%}).")
     print(f"Saved to {path}")
 
 
