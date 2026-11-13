@@ -36,6 +36,28 @@ source:
   # Safety cap so we never download more than we need
   max_records: 3000
 
+# ---------- 1c. HOW do we spot the same company listed twice? ----------
+# Step 2 treats two rows as the same company when their names match
+# after ignoring capitals, punctuation and the endings below.
+# Example: "Honeyville, Inc" and "HONEYVILLE INC." are the same company.
+# For another country, add its endings here (e.g. "gmbh", "plc", "pty").
+clean:
+  name_endings_to_ignore:
+    - "inc"
+    - "incorporated"
+    - "llc"
+    - "lp"
+    - "llp"
+    - "ltd"
+    - "limited"
+    - "co"
+    - "company"
+    - "corp"
+    - "corporation"
+  # Also require this column to match, so two different companies that
+  # share a name are not merged. Use "" to match on name only.
+  must_also_match: "state"
+
 # ---------- 2. WHAT do we offer them? ----------
 # Used by the "Judge" step to decide fit / maybe / no.
 offer:
