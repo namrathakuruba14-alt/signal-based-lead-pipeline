@@ -15,7 +15,7 @@ Most lead lists answer "who *could* buy?" This pipeline also answers "who has a 
 | 0 | Setup | Version history (git), settings file, safety rules | So work is saved, reusable and safe to publish | Done |
 | 1 | Source | Pull recent food recalls from the FDA's free public database | We need a starting list, and a recall is itself a signal | Done |
 | 2 | Clean | Merge repeated rows into one row per company. Pass 1 by name (done), pass 2 by website domain (after Step 3) | The same company appears many times, sometimes under slightly different names | Pass 1 done |
-| 3 | Enrich | Visit each website: what they do, who they sell to, size if available | To judge fit we need to know what the company actually does | Not started |
+| 3 | Enrich | 3a: find and verify each company's website (done). 3b: read the website: what they do, who they sell to, size if available | To judge fit we need to know what the company actually does | 3a done |
 | 4 | Signal | Look for the signals listed in the settings file | Signals tell us who needs help now | Not started |
 | 5 | Judge | Fit / maybe / no, with the exact sentence behind it | So every decision can be checked by a person | Not started |
 | 6 | Score & output | Score each company and save to a CSV (later a Google Sheet) | So the best leads are at the top | Not started |
@@ -91,7 +91,7 @@ A plug-in can add extra columns of its own (the FDA one adds product, severity a
 
 If nothing passes, the website is "not found", with a note saying why (no such address, name not on the site, location not on the site). **A missing website is better than a wrong one.**
 
-**Being polite:** the script identifies itself honestly, obeys each site's robots.txt (the site's rules for programs), waits 5 seconds between visits to the same site, and reads at most 3 pages per site.
+**Being polite:** the script identifies itself honestly, obeys each site's robots.txt (the site's rules for programs), waits 5 seconds between visits to the same site, reads at most 5 pages per site, and never re-visits a company it has already checked.
 
 **Why not a search engine?** Scraping Google breaks its rules, and the search services built for programs now need a paid plan or a card on file. This method is free and needs no account. The cost is that it misses companies whose web address doesn't match their name.
 
@@ -105,6 +105,34 @@ If nothing passes, the website is "not found", with a note saying why (no such a
 | The address belongs to a different company | 7 |
 
 **What this shows:** the verification works (no wrong websites got through), but guessing alone finds too few. The biggest gap is legal names that differ from the brand's web address, which only a search can solve.
+
+**Two free improvements made after that first run:**
+
+- It now also checks privacy and terms pages, which often carry the legal address.
+- When a page can't be read it records the exact reason (for example "site refused automated visitors"). Blocks are recorded and respected, never worked around.
+
+The rule stayed strict: **no location on the page means "not found"**, even when the site is probably right.
+
+**Final result across all 449 companies: 95 verified websites (21%).** Ten of the later finds came from a privacy or terms page. I read the evidence for all 95 and found no wrong match.
+
+Why the rest of the later 349 were "not found" (a company can have more than one reason, so these overlap slightly):
+
+| Reason | Companies |
+|--------|-----------|
+| None of the guessed addresses exist | 104 |
+| Company name on the site, but no matching location shown | 65 |
+| The address belongs to a different company | 41 |
+| No working website at the address | 22 |
+| Security certificate problem | 20 |
+| Site refused automated visitors (respected, not worked around) | 15 |
+| Site asked programs not to visit (robots.txt) | 2 |
+| Other errors | 12 |
+
+## Known limitation and next improvement
+
+**Limitation:** guessing only works when a company's web address looks like its legal name. It can't find "G L Mezzetta Inc" at mezzetta.com, or a company that trades under a brand name. This was the largest group of misses (143 of the 449 companies). The pipeline therefore continues with the 95 companies that have a verified website, which is fewer than needed to be sure of 50 fits.
+
+**Next improvement:** add a search service as a second way to find candidate addresses, feeding into the *same* verification. The verification wouldn't change, so accuracy would stay the same while coverage goes up. It isn't built because the search services designed for programs currently need a paid plan or a card on file, and this project is free-only for now.
 
 ## A note for Step 5 (Judge)
 
@@ -160,4 +188,5 @@ The settings file is currently set up for this test:
 - **Step 1:** Pulled 12 months of US food recalls from the FDA: 1,276 recall records from about 450 company names.
 - **Step 2 (pass 1):** Merged repeated rows by company name: 1,276 rows became 449 companies.
 - **Step 3a:** Guess-and-verify website finder. First run on the newest 100 companies: 20 verified, 0 wrong.
+- **Step 3a, full run:** Added privacy/terms pages and exact failure reasons, then ran all 449 companies: 95 verified websites (21%).
 - **Swappable source:** Moved the FDA code into a plug-in so a new market can use a different source by changing one line in the settings file.
