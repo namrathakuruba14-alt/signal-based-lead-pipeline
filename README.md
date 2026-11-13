@@ -134,9 +134,21 @@ Why the rest of the later 349 were "not found" (a company can have more than one
 
 **Next improvement:** add a search service as a second way to find candidate addresses, feeding into the *same* verification. The verification wouldn't change, so accuracy would stay the same while coverage goes up. It isn't built because the search services designed for programs currently need a paid plan or a card on file, and this project is free-only for now.
 
-## A note for Step 5 (Judge)
+## Rules already decided for Step 5 (Judge) and Step 6 (Score)
 
-The FDA list is "companies that had a recall", not "manufacturers". It includes grocery chains, restaurants and distributors. So the settings file has a required check for a "fit": **the company manufactures or processes food itself**, backed by a sentence from its website.
+These live in the settings file, so they can be changed per market.
+
+- **Must manufacture.** The FDA list is "companies that had a recall", not "manufacturers". It includes grocery chains, restaurants and distributors. A "fit" requires that **the company manufactures or processes food itself**, backed by a sentence from its website.
+- **Unknown size does not rule a company out.** Only a *stated* size outside 11–200 employees does. Most small companies don't publish a headcount, so "unknown" is normal. Example: size unknown + manufactures itself + has a recall = "maybe".
+- **QA job openings get a low score weight** (1 point, against 3 for a recall). See the limitation below.
+
+## Known limitation: job openings are mostly invisible
+
+Most company careers pages don't list jobs. They link to an outside job board (Indeed, ADP, a recruiting platform). This pipeline stays on the company's own website, so it writes down that link but does not visit it, and it never touches LinkedIn.
+
+The effect: "no QA job found" usually means "we couldn't see the job list", not "they aren't hiring". A signal that can rarely be seen shouldn't decide the ranking, so it carries little weight in the score.
+
+**Next improvement:** read public job boards that allow it (many publish a job feed meant for programs), feeding into the same quote check.
 
 ## How to run it
 

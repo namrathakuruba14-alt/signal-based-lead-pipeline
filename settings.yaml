@@ -161,6 +161,12 @@ offer:
   # restaurants (e.g. grocery chains), so this check matters.
   must_be_true:
     - "The company manufactures or processes food itself"
+  # How company size is treated when judging fit:
+  #  - A STATED size outside employees_min..employees_max rules a company out.
+  #  - An UNKNOWN size never rules a company out. Most small companies do
+  #    not publish their headcount, so "unknown" is normal, not a red flag.
+  #  - Example: size unknown + manufactures itself + has a recall = "maybe".
+  unknown_size_rules_out: false
 
 # ---------- 3. WHICH signals show they might need it now? ----------
 # A signal = a recent, public event that suggests a need.
@@ -170,7 +176,11 @@ signals:
   - id: hiring_qa
     label: "Hiring QA or food safety roles"
     look_for: "Job postings for quality assurance, food safety, HACCP, SQF or compliance roles"
-    points: 3
+    # Low weight on purpose. Most careers pages just link to an outside
+    # job board, which this pipeline does not visit. So "no QA job found"
+    # usually means "we could not see the job list", not "they are not
+    # hiring". A signal we can rarely see should not move the score much.
+    points: 1
 
   - id: recall
     label: "Recent recall"
