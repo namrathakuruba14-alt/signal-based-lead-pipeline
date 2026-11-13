@@ -15,7 +15,7 @@ Most lead lists answer "who *could* buy?" This pipeline also answers "who has a 
 | 0 | Setup | Version history (git), settings file, safety rules | So work is saved, reusable and safe to publish | Done |
 | 1 | Source | Pull recent food recalls from the FDA's free public database | We need a starting list, and a recall is itself a signal | Done |
 | 2 | Clean | Merge repeated rows into one row per company. Pass 1 by name (done), pass 2 by website domain (after Step 3) | The same company appears many times, sometimes under slightly different names | Pass 1 done |
-| 3 | Enrich | 3a: find and verify each company's website (done). 3b: read the website: what they do, who they sell to, size if available | To judge fit we need to know what the company actually does | 3a done |
+| 3 | Enrich | 3a: find and verify each company's website. 3b: read the website: what they make, whether they make it themselves, size clues, food safety terms, QA jobs | To judge fit we need to know what the company actually does | Done |
 | 4 | Signal | Look for the signals listed in the settings file | Signals tell us who needs help now | Not started |
 | 5 | Judge | Fit / maybe / no, with the exact sentence behind it | So every decision can be checked by a person | Not started |
 | 6 | Score & output | Score each company and save to a CSV (later a Google Sheet) | So the best leads are at the top | Not started |
@@ -134,6 +134,36 @@ Why the rest of the later 349 were "not found" (a company can have more than one
 
 **Next improvement:** add a search service as a second way to find candidate addresses, feeding into the *same* verification. The verification wouldn't change, so accuracy would stay the same while coverage goes up. It isn't built because the search services designed for programs currently need a paid plan or a card on file, and this project is free-only for now.
 
+## Step 3b in detail: reading the websites
+
+**Goal:** for each company with a verified website, record what it makes, whether it makes the food itself, any stated size facts, food safety terms and certifications, and open QA or food safety jobs. Every fact comes with the exact sentence it is based on.
+
+**It runs in three parts:**
+
+1. **Collect** (`step3b_collect_pages.py`). Saves the text of the Home, About, Products, Careers and News pages (those that exist) into `data/pages/`. Later steps read these saved copies, so each website is visited once. Result: 302 pages from 89 of the 95 websites. Six sites could not be reached and are marked "not read".
+2. **Read** (`step3b_prepare_reading.py` + `prompts/step3b_read_instructions.md`). The saved text is bundled into batches of 20 companies. A reader follows the instruction file and writes one answer per company, each with a quote.
+3. **Check and fill** (`step3b_fill_columns.py`). A script checks every quote against the saved page. **If the quote is not there word for word, the answer is deleted.** It also does the food safety keyword match (plain matching from the list in the settings file) and writes `data/step3b_enriched.csv`.
+
+**Who did the reading in this run: Claude, in a Claude Code session.** This was a deliberate choice: no extra cost and no new account. The trade-off is that this one part cannot be re-run by code alone. The quote check is what keeps it honest: it is done by a script, and it would catch an invented or misquoted fact whoever did the reading.
+
+**Result of the quote check: 261 quotes checked, 0 failed.**
+
+| What was found (95 companies) | Companies |
+|-------------------------------|-----------|
+| Manufactures itself | 53 |
+| Distributor | 18 |
+| Retailer | 2 |
+| Not stated clearly on the pages, left blank | 16 |
+| Website could not be read | 6 |
+| States an employee count | 7 |
+| No size fact of any kind ("unknown") | 36 |
+| Lists an open QA or food safety job | 4 |
+| Mentions at least one food safety term | 42 |
+
+**Rules the reader follows:** use only the page text; leave blank if not stated; never estimate size; label "manufactures itself" only when the page says so. Several companies that probably do manufacture are blank for this reason, and the Judge step treats blank as "not proven", not as "no".
+
+**Next step, Option A: let a script do the reading through the Claude API.** The same instruction file and the same batches are sent to the API, and the answers are saved in the same format. Nothing else changes, including the quote check. Estimated cost for this run's roughly 500,000 characters of page text: **under $0.10 with the smallest model (Haiku 5.5), or under $1 with the mid model (Sonnet 5.5)**, using list prices dated 3 November 2026. It needs an Anthropic API account with a card on file, and the key would go in `.env`. Not built yet, by choice.
+
 ## Rules already decided for Step 5 (Judge) and Step 6 (Score)
 
 These live in the settings file, so they can be changed per market.
@@ -157,6 +187,10 @@ pip install -r requirements.txt
 python step1_source.py
 python step2_clean.py
 python step3a_find_websites.py
+python step3b_collect_pages.py
+python step3b_prepare_reading.py
+# (the reader fills data/step3b_answers/ following prompts/step3b_read_instructions.md)
+python step3b_fill_columns.py
 ```
 
 ## First test market
@@ -177,6 +211,10 @@ The settings file is currently set up for this test:
 | `step1_source.py` | Step 1: runs whichever source the settings file names and saves the list |
 | `step2_clean.py` | Step 2: merges repeated rows into one row per company |
 | `step3a_find_websites.py` | Step 3a: guesses each company's website and verifies it |
+| `step3b_collect_pages.py` | Step 3b part 1: saves page text from each verified website |
+| `step3b_prepare_reading.py` | Step 3b part 2: bundles saved pages into reading batches |
+| `step3b_fill_columns.py` | Step 3b part 3: quote check, keyword match, final columns |
+| `prompts/` | The instructions the reader (Claude in-session now, the API later) follows |
 | `sources/` | One plug-in file per source. `openfda_recalls.py` is the FDA one. `__init__.py` is the list of available sources. |
 | `requirements.txt` | The two free Python helpers the project needs |
 | `README.md` | This explanation |
@@ -201,4 +239,5 @@ The settings file is currently set up for this test:
 - **Step 2 (pass 1):** Merged repeated rows by company name: 1,276 rows became 449 companies.
 - **Step 3a:** Guess-and-verify website finder. First run on the newest 100 companies: 20 verified, 0 wrong.
 - **Step 3a, full run:** Added privacy/terms pages and exact failure reasons, then ran all 449 companies: 95 verified websites (21%).
+- **Step 3b:** Saved 302 pages from 89 websites, read them in 5 batches in-session, and quote-checked every answer: 261 quotes, 0 failed. 53 companies say they manufacture themselves.
 - **Swappable source:** Moved the FDA code into a plug-in so a new market can use a different source by changing one line in the settings file.
