@@ -88,6 +88,66 @@ find_website:
   # the legal address)
   extra_pages_per_site: 4
 
+# ---------- 1e. WHICH pages do we save from each website? ----------
+# Step 3b saves the text of the home page plus ONE page of each kind
+# below, if the site has it. A page is recognised by these words in its
+# link. Later steps read the saved copies, so each site is visited once.
+collect_pages:
+  page_kinds:
+    about:
+      - "about"
+      - "our story"
+      - "our-story"
+      - "who we are"
+      - "who-we-are"
+    products:
+      - "product"
+      - "what we make"
+      - "what-we-make"
+      - "what we do"
+      - "what-we-do"
+      - "shop"
+    careers:
+      - "career"
+      - "jobs"
+      - "join our team"
+      - "join-our-team"
+      - "employment"
+      - "work with us"
+      - "work-with-us"
+    news:
+      - "news"
+      - "press"
+      - "blog"
+
+# ---------- 1f. WHICH food safety words do we look for? ----------
+# Step 3b records every one of these found on a company's saved pages,
+# with the sentence it appeared in. Plain word matching, no judgement.
+# For another market, replace this list with that market's terms.
+food_safety_terms:
+  - "SQF"
+  - "BRC"
+  - "BRCGS"
+  - "FSSC 22000"
+  - "ISO 22000"
+  - "GFSI"
+  - "HACCP"
+  - "GMP"
+  - "cGMP"
+  - "FSMA"
+  - "USDA Organic"
+  - "Certified Organic"
+  - "Non-GMO Project"
+  - "Kosher"
+  - "Halal"
+  - "Gluten-Free Certified"
+  - "third-party audit"
+  - "third party audit"
+  - "food safety"
+  - "allergen"
+  - "lab tested"
+  - "lab testing"
+
 # ---------- 2. WHAT do we offer them? ----------
 # Used by the "Judge" step to decide fit / maybe / no.
 offer:
