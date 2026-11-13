@@ -148,6 +148,74 @@ food_safety_terms:
   - "lab tested"
   - "lab testing"
 
+# ---------- 1g. HOW do we look for signals on the saved pages? ----------
+# Step 4 first pulls out every line on a company's saved pages that
+# contains one of the names or phrases below ("candidate lines").
+# A reader then decides whether each one is a real signal.
+# For another market, replace these lists.
+signal_search:
+  # A signal counts as STRONG if it is dated within this many days of
+  # the day Step 4 is run, WEAK if it has no date, and is left blank if
+  # the pages do not mention it.
+  strong_if_dated_within_days: 365
+
+  # Big US retailers. These usually require suppliers to hold a food
+  # safety certification, which is why selling to them is a signal.
+  big_retailers:
+    - "Walmart"
+    - "Sam's Club"
+    - "Costco"
+    - "Target"
+    - "Kroger"
+    - "Whole Foods"
+    - "Albertsons"
+    - "Safeway"
+    - "Publix"
+    - "H-E-B"
+    - "Trader Joe's"
+    - "Aldi"
+    - "Meijer"
+    - "Wegmans"
+    - "Sprouts"
+    - "BJ's"
+    - "Hy-Vee"
+    - "Food Lion"
+    - "Stop & Shop"
+    - "ShopRite"
+    - "Dollar General"
+    - "CVS"
+    - "Walgreens"
+  retailer_phrases:
+    - "available at"
+    - "available in stores"
+    - "find us at"
+    - "find us in"
+    - "now at"
+    - "sold at"
+    - "sold in"
+    - "in stores"
+    - "retailers"
+    - "where to buy"
+  export_phrases:
+    - "export"
+    - "international"
+    - "countries"
+    - "worldwide"
+    - "overseas"
+    - "globally"
+    - "around the globe"
+  new_product_phrases:
+    - "new product"
+    - "launch"
+    - "introducing"
+    - "now available"
+    - "new flavor"
+    - "new line"
+    - "announces"
+    - "limited edition"
+    - "coming soon"
+    - "just in"
+
 # ---------- 2. WHAT do we offer them? ----------
 # Used by the "Judge" step to decide fit / maybe / no.
 offer:
@@ -167,6 +235,14 @@ offer:
   #    not publish their headcount, so "unknown" is normal, not a red flag.
   #  - Example: size unknown + manufactures itself + has a recall = "maybe".
   unknown_size_rules_out: false
+
+  # "Likely too big" flag. Some companies never state a headcount but
+  # give other clues that they are well over the size limit. Such a
+  # company is NOT excluded. It is only marked so a person can review it.
+  likely_too_big_flag:
+    plants_at_least: 2             # two or more plants/factories
+    facility_sq_ft_at_least: 100000  # one very large facility
+    excludes_company: false
 
 # ---------- 3. WHICH signals show they might need it now? ----------
 # A signal = a recent, public event that suggests a need.
@@ -201,6 +277,32 @@ signals:
     label: "New product launch"
     look_for: "News or website mentions of a new product or product line"
     points: 1
+
+# ---------- 3b. Named scoring rules ----------
+# A named rule is a combination of facts that matters more than the
+# points alone. Used in the scoring step.
+scoring_rules:
+  top_priority:
+    description: >
+      Had a recall, AND sells to a big retailer or exports, AND no food
+      safety certification was found on its website. This company has a
+      proven problem, has customers who demand certification, and shows
+      no sign of holding one. That is exactly the gap our client fills.
+    requires_all:
+      - "recall"
+      - "big retailer OR export"
+      - "no certification term found"
+    # Which terms count as a food safety CERTIFICATION for this rule.
+    # (Kosher, Organic, HACCP and GMP are not counted: they are diet
+    # labels or internal programmes, not the audited schemes that big
+    # retailers ask for.)
+    certification_terms:
+      - "SQF"
+      - "BRC"
+      - "BRCGS"
+      - "FSSC 22000"
+      - "ISO 22000"
+      - "GFSI"
 
 # ---------- 4. WHO would we contact there? ----------
 # Job titles only. The pipeline does not collect names from LinkedIn.
