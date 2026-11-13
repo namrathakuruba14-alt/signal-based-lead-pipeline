@@ -1,0 +1,27 @@
+# .gitignore = the list of files git must NEVER save or upload to GitHub.
+
+# --- Secrets ---
+# .env holds passwords / API keys. It stays on this computer only.
+.env
+
+# --- Real data ---
+# Everything the pipeline downloads or produces goes in data/.
+# It can contain real people's names and emails, so it never goes to GitHub.
+# (The repo gets a fake-name example in sample_output/ instead.)
+data/
+
+# --- Python clutter (auto-generated, not our work) ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# --- Editor / computer clutter ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Claude Code personal settings ---
+.claude/settings.local.json

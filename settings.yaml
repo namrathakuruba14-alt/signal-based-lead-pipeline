@@ -1,0 +1,104 @@
+# ============================================================
+# SETTINGS FILE - the only file you edit to target a new market
+# ============================================================
+# The code reads everything below. To point the pipeline at a
+# different market, change the values here. Do not change the code.
+#
+# Lines starting with # are notes for humans. The code ignores them.
+
+# ---------- 1. WHO are we looking for? ----------
+market:
+  name: "US food manufacturers"
+  description: "Companies that make food products in the United States"
+  country: "US"
+  employees_min: 11
+  employees_max: 200
+  # How many companies we want in the final list
+  goal_company_count: 50
+
+# ---------- 1b. WHERE does the starting list come from? ----------
+# Step 1 pulls companies from this source.
+#
+# "type" picks WHICH source plug-in to use. Each plug-in is one file in
+# the sources/ folder. To use a different source for a new market
+# (e.g. a job board for startups), add a plug-in file there and put its
+# name here. The rest of the pipeline stays the same.
+#
+# Everything under "type" is settings for that particular plug-in.
+source:
+  type: "openfda_recalls"
+  # openFDA = the US Food and Drug Administration's free public database.
+  # No password or key needed.
+  name: "FDA food recalls (openFDA)"
+  url: "https://api.fda.gov/food/enforcement.json"
+  # How far back to look. 365 = recalls reported in the last 12 months.
+  lookback_days: 365
+  # Safety cap so we never download more than we need
+  max_records: 3000
+
+# ---------- 2. WHAT do we offer them? ----------
+# Used by the "Judge" step to decide fit / maybe / no.
+offer:
+  summary: "Food safety services: food testing, audits and certifications"
+  a_good_fit_is: >
+    A company that makes food itself (not just a restaurant, retailer or
+    distributor) and is likely to need outside help with food testing,
+    audits or certifications.
+
+# ---------- 3. WHICH signals show they might need it now? ----------
+# A signal = a recent, public event that suggests a need.
+# "points" is how much each signal adds to the company's score.
+# Change the points to change what the pipeline treats as most important.
+signals:
+  - id: hiring_qa
+    label: "Hiring QA or food safety roles"
+    look_for: "Job postings for quality assurance, food safety, HACCP, SQF or compliance roles"
+    points: 3
+
+  - id: recall
+    label: "Recent recall"
+    look_for: "A product recall published by the FDA or USDA"
+    points: 3
+
+  - id: retail_expansion
+    label: "Trying to get into big retailers"
+    look_for: "News or website mentions of launching in large retailers (e.g. Walmart, Costco, Whole Foods) that require certification"
+    points: 3
+
+  - id: export
+    label: "Starting to export"
+    look_for: "News or website mentions of selling to new countries or international expansion"
+    points: 2
+
+  - id: new_product
+    label: "New product launch"
+    look_for: "News or website mentions of a new product or product line"
+    points: 1
+
+# ---------- 4. WHO would we contact there? ----------
+# Job titles only. The pipeline does not collect names from LinkedIn.
+contact_roles:
+  - "QA manager / food safety manager"
+  - "Head of operations"
+  - "Owner / founder"
+
+# ---------- 5. Good manners and safety ----------
+politeness:
+  # Wait this many seconds between visits to the same website
+  seconds_between_requests: 5
+  # Give up on a slow website after this many seconds
+  timeout_seconds: 20
+  # Never visit these sites
+  blocked_sites:
+    - "linkedin.com"
+
+# ---------- 6. Rules for missing information ----------
+# We never guess. If a fact can't be found, we write this instead.
+missing_value_text: "not found"
+
+# ---------- 7. Where files are saved ----------
+output:
+  # Real results (kept OFF GitHub - see .gitignore)
+  data_folder: "data"
+  # Fake-name example that IS safe for GitHub
+  sample_folder: "sample_output"
