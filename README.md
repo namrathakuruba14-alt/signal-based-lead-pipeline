@@ -95,6 +95,17 @@ If nothing passes, the website is "not found", with a note saying why (no such a
 
 **Why not a search engine?** Scraping Google breaks its rules, and the search services built for programs now need a paid plan or a card on file. This method is free and needs no account. The cost is that it misses companies whose web address doesn't match their name.
 
+**Result on the newest 100 companies: 20 verified websites (20%).** I read all 20 by hand and each one is the right company. The other 80 are "not found", for these reasons:
+
+| Reason | Companies |
+|--------|-----------|
+| None of the guessed addresses exist (the web address doesn't match the legal name) | 39 |
+| The address exists but the page could not be read (often sites that turn away automated visitors) | 18 |
+| Probably the right site, but no address shown on the pages checked | 16 |
+| The address belongs to a different company | 7 |
+
+**What this shows:** the verification works (no wrong websites got through), but guessing alone finds too few. The biggest gap is legal names that differ from the brand's web address, which only a search can solve.
+
 ## A note for Step 5 (Judge)
 
 The FDA list is "companies that had a recall", not "manufacturers". It includes grocery chains, restaurants and distributors. So the settings file has a required check for a "fit": **the company manufactures or processes food itself**, backed by a sentence from its website.
@@ -148,4 +159,5 @@ The settings file is currently set up for this test:
 - **Setup:** Created the project, version history, settings file and safety rules.
 - **Step 1:** Pulled 12 months of US food recalls from the FDA: 1,276 recall records from about 450 company names.
 - **Step 2 (pass 1):** Merged repeated rows by company name: 1,276 rows became 449 companies.
+- **Step 3a:** Guess-and-verify website finder. First run on the newest 100 companies: 20 verified, 0 wrong.
 - **Swappable source:** Moved the FDA code into a plug-in so a new market can use a different source by changing one line in the settings file.
