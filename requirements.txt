@@ -2,3 +2,4 @@
 # Install them with:  pip install -r requirements.txt
 requests   # talks to websites
 pyyaml     # reads settings.yaml
+beautifulsoup4   # reads the text of a web page

@@ -78,12 +78,34 @@ A plug-in can add extra columns of its own (the FDA one adds product, severity a
 
 **Result:** 1,276 rows in, 449 companies out. Saved to `data/step2_companies_clean.csv`.
 
+## Step 3a in detail: finding websites without a paid tool
+
+**The problem:** the list has names and locations but no websites, and Step 3 needs a website to read.
+
+**The method: guess, then verify.**
+
+1. **Guess** likely addresses from the name: "Honeyville, Inc" → `honeyville.com`. It also tries the name without a generic last word ("Palmetto Gourmet Foods" → `palmettogourmet.com`) and both halves of a "doing business as" name.
+2. **Check the address exists** using the internet's address book. This doesn't visit the site, so wrong guesses bother nobody.
+3. **Verify** by reading the site. The guess is accepted only if the site shows the company's **name** and its **location** (city and state written together, or the zip code). It looks at the home page first and opens up to two Contact/About pages only if needed.
+4. **Save the evidence:** the exact text that matched and the page it was on.
+
+If nothing passes, the website is "not found", with a note saying why (no such address, name not on the site, location not on the site). **A missing website is better than a wrong one.**
+
+**Being polite:** the script identifies itself honestly, obeys each site's robots.txt (the site's rules for programs), waits 5 seconds between visits to the same site, and reads at most 3 pages per site.
+
+**Why not a search engine?** Scraping Google breaks its rules, and the search services built for programs now need a paid plan or a card on file. This method is free and needs no account. The cost is that it misses companies whose web address doesn't match their name.
+
+## A note for Step 5 (Judge)
+
+The FDA list is "companies that had a recall", not "manufacturers". It includes grocery chains, restaurants and distributors. So the settings file has a required check for a "fit": **the company manufactures or processes food itself**, backed by a sentence from its website.
+
 ## How to run it
 
 ```
 pip install -r requirements.txt
 python step1_source.py
 python step2_clean.py
+python step3a_find_websites.py
 ```
 
 ## First test market
@@ -103,6 +125,7 @@ The settings file is currently set up for this test:
 | `settings.yaml` | The target market: who to look for, which signals, which roles. **The only file you edit to change markets.** |
 | `step1_source.py` | Step 1: runs whichever source the settings file names and saves the list |
 | `step2_clean.py` | Step 2: merges repeated rows into one row per company |
+| `step3a_find_websites.py` | Step 3a: guesses each company's website and verifies it |
 | `sources/` | One plug-in file per source. `openfda_recalls.py` is the FDA one. `__init__.py` is the list of available sources. |
 | `requirements.txt` | The two free Python helpers the project needs |
 | `README.md` | This explanation |

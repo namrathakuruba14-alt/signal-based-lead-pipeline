@@ -58,6 +58,33 @@ clean:
   # share a name are not merged. Use "" to match on name only.
   must_also_match: "state"
 
+# ---------- 1d. HOW do we find each company's website? ----------
+# Step 3a guesses web addresses from the company name
+# (e.g. "Honeyville, Inc" -> honeyville.com) and then CHECKS each guess.
+# A guess is only accepted if the site itself shows the company's name
+# plus its city/state or zip code. Otherwise: "not found".
+find_website:
+  # How many companies to process per run (newest signal first)
+  companies_per_run: 100
+  # Address endings to try
+  domain_endings:
+    - ".com"
+  # Generic words at the end of a name that companies often leave out of
+  # their web address ("Palmetto Gourmet Foods" -> palmettogourmet.com).
+  # We try the address with and without them.
+  optional_last_words:
+    - "foods"
+    - "food"
+    - "products"
+    - "brands"
+    - "group"
+    - "enterprises"
+    - "international"
+    - "usa"
+    - "holdings"
+  # Besides the home page, look at up to this many "contact"/"about" pages
+  extra_pages_per_site: 2
+
 # ---------- 2. WHAT do we offer them? ----------
 # Used by the "Judge" step to decide fit / maybe / no.
 offer:
@@ -66,6 +93,11 @@ offer:
     A company that makes food itself (not just a restaurant, retailer or
     distributor) and is likely to need outside help with food testing,
     audits or certifications.
+  # Questions the Judge step must answer "yes" to, with evidence, before
+  # a company can be a "fit". The source list includes retailers and
+  # restaurants (e.g. grocery chains), so this check matters.
+  must_be_true:
+    - "The company manufactures or processes food itself"
 
 # ---------- 3. WHICH signals show they might need it now? ----------
 # A signal = a recent, public event that suggests a need.
