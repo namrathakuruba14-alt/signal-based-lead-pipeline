@@ -43,11 +43,18 @@ def load_settings():
         return yaml.safe_load(f)
 
 
-def make_pattern(words, match_case):
-    """One search pattern that finds any of the words as whole words."""
+def make_pattern(words, is_name):
+    """
+    One search pattern that finds any of the words.
+    - Retailer NAMES must match exactly, capitals included ("Target" the
+      shop, not "target" the verb or "Targeted").
+    - PHRASES match any capitals and may continue with more letters, so
+      "export" also finds "exports", "exporting" and "exporter".
+    """
     joined = "|".join(re.escape(w) for w in words)
-    flags = 0 if match_case else re.I
-    return re.compile(rf"(?<![A-Za-z0-9])(?:{joined})(?![A-Za-z0-9])", flags)
+    if is_name:
+        return re.compile(rf"(?<![A-Za-z0-9])(?:{joined})(?![A-Za-z0-9])")
+    return re.compile(rf"(?<![A-Za-z0-9])(?:{joined})", re.I)
 
 
 def cut_around(line, match):
@@ -65,8 +72,7 @@ def main():
     out_folder = folder / "step4_candidates"
     out_folder.mkdir(exist_ok=True)
 
-    # What to look for, per signal. Retailer NAMES must match capitals
-    # ("Target" the shop, not "target" the verb); phrases need not.
+    # What to look for, per signal.
     searches = {
         "big_retailer": [make_pattern(search["big_retailers"], True),
                          make_pattern(search["retailer_phrases"], False)],
