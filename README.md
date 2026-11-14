@@ -17,9 +17,9 @@ Most lead lists answer "who *could* buy?" This pipeline also answers "who has a 
 | 2 | Clean | Merge repeated rows into one row per company. Pass 1 by name (done), pass 2 by website domain (after Step 3) | The same company appears many times, sometimes under slightly different names | Pass 1 done |
 | 3 | Enrich | 3a: find and verify each company's website. 3b: read the website: what they make, whether they make it themselves, size clues, food safety terms, QA jobs | To judge fit we need to know what the company actually does | Done |
 | 4 | Signal | Look for big-retailer, export and new-product signals on the saved pages, each graded strong or weak | Signals tell us who needs help now | Done |
-| 5 | Judge | Fit / maybe / no, with the exact sentence behind it | So every decision can be checked by a person | Not started |
-| 6 | Score & output | Score each company and save to a CSV (later a Google Sheet) | So the best leads are at the top | Not started |
-| 7 | Opener (stretch) | Write a first line for each "fit" company based on its signal | Makes outreach specific instead of generic | Not started |
+| 5 | Judge | Fit / maybe / no by fixed rules in code, with the rule and the exact sentence behind each verdict | So every decision can be checked by a person, and re-run by anyone | Done |
+| 6 | Decision maker finder | Find the right role to contact at each company | A lead is only useful with someone to contact | Not started |
+| 7 | Score + CSV | Score each company and save to a CSV (later a Google Sheet) | So the best leads are at the top | Not started |
 
 ## Step 1 in detail: where the list comes from
 
@@ -216,9 +216,40 @@ Together these describe a company with a proven problem, demanding customers and
 - "No certification found" means not found on the pages we saved. A company may hold one and not mention it. So the rule ranks a company for attention; it does not state a fact about them.
 - Only audited schemes count as a certification here (SQF, BRC/BRCGS, FSSC 22000, ISO 22000, GFSI). Kosher, Organic, HACCP and GMP do not, because they are diet labels or internal programmes rather than what retailers ask for. The list is in the settings file.
 
-In this test market every company has a recall, because the list came from the FDA. So here the rule comes down to "retailer or export, and no certification found". A first count gives 21 companies, 12 of which say they manufacture themselves. The final list is produced in the scoring step, after the Judge step.
+In this test market every company has a recall, because the list came from the FDA. So here the rule comes down to "retailer or export, and no certification found". A first count gives 21 companies, 12 of which say they manufacture themselves. The final list is produced in Step 7 (Score + CSV).
 
-## Rules already decided for Step 5 (Judge) and Step 6 (Score)
+## Step 5 in detail: the verdict
+
+**No AI reading in this step.** Step 5 is fixed rules in code (`step5_judge.py`). It only looks at columns filled in by earlier steps, so anyone who runs it gets the same answer. The judgement that needed reading was done in Steps 3b and 4, where every fact was tied to a quote. Step 5 just applies the rules to those facts.
+
+**The rules, in order. The first one that applies decides.**
+
+| Verdict | Rule |
+|---------|------|
+| **No** | 1. It is a distributor |
+| **No** | 2. It is a retailer |
+| **No** | 3. It is not a food maker (packaging, supplements, seeds; keyword list in the settings file) |
+| **No** | 4. Its product has been discontinued |
+| **No** | 5. It states an employee count outside 11–200 |
+| **Maybe** | 6. The website does not say who makes the product |
+| **Maybe** | 7. The "likely too big" flag is on |
+| **Maybe** | 8. Size is unknown |
+| **Fit** | 9. Manufactures itself, is a food maker, no stated size outside 11–200, no too-big flag, and at least one signal (the recall counts) |
+
+**Every verdict carries the rule that decided it and the quote behind it.** For a fit, that is the sentence showing it makes the food itself plus the FDA's recall reason.
+
+**Result for the 95 companies with a verified website:**
+
+| Verdict | Companies | Decided by |
+|---------|-----------|------------|
+| Fit | 25 | rule 9 |
+| Maybe | 28 | not stated who makes it: 9; likely too big: 7; size unknown: 12 |
+| No | 36 | distributor: 18; retailer: 2; not a food maker: 11; discontinued: 1; employee count out of range: 4 |
+| Not read | 6 | website could not be reached |
+
+**A weakness worth knowing: what "size unknown" means.** Step 3b collected founding years as size clues, but "since 1947" says nothing about how big a company is today. With a founding year counted as knowing the size, 25 companies are a fit, and that includes some very large ones whose only size fact is a founding year. With it not counted, only 4 are a fit and 49 are a maybe. This is one switch in the settings file (`founding_year_alone_counts_as_size`). It is currently on.
+
+## Rules that apply across Steps 5 and 7
 
 These live in the settings file, so they can be changed per market.
 
@@ -227,6 +258,7 @@ These live in the settings file, so they can be changed per market.
 - **QA job openings get a low score weight** (1 point, against 3 for a recall). See the limitation below.
 - **"Likely too big" flag.** Some companies never state a headcount but give other clues: two or more plants, or one facility of 100,000 square feet or more. These are flagged for a person to review. **The flag never excludes a company**, because a plant count is a clue, not a headcount. The thresholds are in the settings file.
 - **"Top priority" rule.** Explained in the section above.
+- **Scoring does not depend on strong signals.** Step 4 showed almost no signal can be dated, so a weak signal counts in full.
 
 ## Known limitation: job openings are mostly invisible
 
@@ -250,6 +282,7 @@ python step3b_fill_columns.py
 python step4_find_candidates.py
 # (the reader fills data/step4_answers/ following prompts/step4_signal_instructions.md)
 python step4_fill_signals.py
+python step5_judge.py
 ```
 
 ## First test market
@@ -275,6 +308,7 @@ The settings file is currently set up for this test:
 | `step3b_fill_columns.py` | Step 3b part 3: quote check, keyword match, final columns |
 | `step4_find_candidates.py` | Step 4 part 1: pulls out lines that might be a signal |
 | `step4_fill_signals.py` | Step 4 part 2: quote check and strong/weak grading |
+| `step5_judge.py` | Step 5: fit / maybe / no by fixed rules, with the rule and quote for each |
 | `prompts/` | The instructions the reader (Claude in-session now, the API later) follows |
 | `sources/` | One plug-in file per source. `openfda_recalls.py` is the FDA one. `__init__.py` is the list of available sources. |
 | `requirements.txt` | The two free Python helpers the project needs |
@@ -302,4 +336,5 @@ The settings file is currently set up for this test:
 - **Step 3a, full run:** Added privacy/terms pages and exact failure reasons, then ran all 449 companies: 95 verified websites (21%).
 - **Step 3b:** Saved 302 pages from 89 websites, read them in 5 batches in-session, and quote-checked every answer: 261 quotes, 0 failed. 53 companies say they manufacture themselves.
 - **Step 4:** Searched the saved pages for retailer, export and new-product signals. 35 of 89 companies show at least one; 49 checks, 0 failed. Added the "top priority" rule and the "likely too big" flag to the settings file.
+- **Step 5:** Judged all companies by fixed rules in code: 25 fit, 28 maybe, 36 no, 6 not read. Renumbered the plan: 5 Judge, 6 Decision maker finder, 7 Score + CSV.
 - **Swappable source:** Moved the FDA code into a plug-in so a new market can use a different source by changing one line in the settings file.

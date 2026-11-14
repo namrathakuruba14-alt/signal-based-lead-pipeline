@@ -235,6 +235,13 @@ offer:
   #    not publish their headcount, so "unknown" is normal, not a red flag.
   #  - Example: size unknown + manufactures itself + has a recall = "maybe".
   unknown_size_rules_out: false
+  # What counts as "size unknown"? A founding year ("since 1947") was
+  # collected as a size clue, but it says nothing about how big a company
+  # is today.
+  #   true  = a founding year alone is enough for size to count as known
+  #   false = size is known only if there is an employee count, a plant
+  #           count or a facility size
+  founding_year_alone_counts_as_size: true
 
   # "Likely too big" flag. Some companies never state a headcount but
   # give other clues that they are well over the size limit. Such a
@@ -243,6 +250,24 @@ offer:
     plants_at_least: 2             # two or more plants/factories
     facility_sq_ft_at_least: 100000  # one very large facility
     excludes_company: false
+
+# ---------- 2b. Word lists used by the Judge step (Step 5) ----------
+# Step 5 is plain rules in code. These lists are the only "knowledge"
+# it has about what counts as a food maker in this market.
+judge:
+  # If any of these appears in what the company makes (the label or the
+  # quote behind it), the company is "not a food maker" -> No.
+  not_food_maker_keywords:
+    - "supplement"
+    - "vitamin"
+    - "probiotic"
+    - "nutraceutical"
+    - "herbal"
+    - "garden seeds"
+    - "packaging, not food"
+  # If any of these appears, the product is no longer made -> No.
+  discontinued_keywords:
+    - "discontinued"
 
 # ---------- 3. WHICH signals show they might need it now? ----------
 # A signal = a recent, public event that suggests a need.
@@ -280,7 +305,11 @@ signals:
 
 # ---------- 3b. Named scoring rules ----------
 # A named rule is a combination of facts that matters more than the
-# points alone. Used in the scoring step.
+# points alone. Used in the scoring step (Step 7).
+#
+# Scoring must NOT depend on a signal being "strong". Step 4 showed that
+# websites almost never date these statements, so nearly every signal is
+# "weak". A weak signal counts in full for the rule below.
 scoring_rules:
   top_priority:
     description: >
