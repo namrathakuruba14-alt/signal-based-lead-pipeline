@@ -242,12 +242,21 @@ In this test market every company has a recall, because the list came from the F
 
 | Verdict | Companies | Decided by |
 |---------|-----------|------------|
-| Fit | 25 | rule 9 |
-| Maybe | 28 | not stated who makes it: 9; likely too big: 7; size unknown: 12 |
+| Fit | 4 | rule 9 |
+| Maybe | 49 | not stated who makes it: 9; likely too big: 7; size unknown: 33 |
 | No | 36 | distributor: 18; retailer: 2; not a food maker: 11; discontinued: 1; employee count out of range: 4 |
 | Not read | 6 | website could not be reached |
 
-**A weakness worth knowing: what "size unknown" means.** Step 3b collected founding years as size clues, but "since 1947" says nothing about how big a company is today. With a founding year counted as knowing the size, 25 companies are a fit, and that includes some very large ones whose only size fact is a founding year. With it not counted, only 4 are a fit and 49 are a maybe. This is one switch in the settings file (`founding_year_alone_counts_as_size`). It is currently on.
+**What "size unknown" means.** Step 3b collected founding years as size clues, but "since 1947" says nothing about how big a company is today. So a founding year does not count as a size fact: size is known only when the website gives an employee count, a plant count or a facility size. (With founding years counted, 25 companies would be a fit, including some very large ones. This is one switch in the settings file, `founding_year_alone_counts_as_size`, now off.)
+
+**The honest picture:** only 4 companies state enough to be a clean fit. Small manufacturers rarely publish their size, and the usual place to find it is off limits to this pipeline. So the biggest group is "manufactures itself, has a recall, size unknown".
+
+**Who goes forward to Step 6 and the final CSV: 37 companies.**
+
+- The 4 fits.
+- The 33 maybes whose only reason is unknown size. In the final CSV they are labelled **"maybe: confirm headcount before outreach"**, so nobody contacts them assuming they are the right size.
+
+The 16 other maybes (likely too big, or the website does not say who makes the product) do not go forward.
 
 ## Rules that apply across Steps 5 and 7
 
@@ -336,5 +345,5 @@ The settings file is currently set up for this test:
 - **Step 3a, full run:** Added privacy/terms pages and exact failure reasons, then ran all 449 companies: 95 verified websites (21%).
 - **Step 3b:** Saved 302 pages from 89 websites, read them in 5 batches in-session, and quote-checked every answer: 261 quotes, 0 failed. 53 companies say they manufacture themselves.
 - **Step 4:** Searched the saved pages for retailer, export and new-product signals. 35 of 89 companies show at least one; 49 checks, 0 failed. Added the "top priority" rule and the "likely too big" flag to the settings file.
-- **Step 5:** Judged all companies by fixed rules in code: 25 fit, 28 maybe, 36 no, 6 not read. Renumbered the plan: 5 Judge, 6 Decision maker finder, 7 Score + CSV.
+- **Step 5:** Judged all companies by fixed rules in code: 4 fit, 49 maybe, 36 no, 6 not read (a founding year does not count as a size fact). 37 companies go forward: the 4 fits plus 33 maybes whose only gap is unknown size. Renumbered the plan: 5 Judge, 6 Decision maker finder, 7 Score + CSV.
 - **Swappable source:** Moved the FDA code into a plug-in so a new market can use a different source by changing one line in the settings file.

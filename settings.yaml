@@ -241,7 +241,16 @@ offer:
   #   true  = a founding year alone is enough for size to count as known
   #   false = size is known only if there is an employee count, a plant
   #           count or a facility size
-  founding_year_alone_counts_as_size: true
+  founding_year_alone_counts_as_size: false
+
+  # Which companies go forward to Step 6 (decision maker finder) and
+  # into the final CSV:
+  #   - every "fit"
+  #   - every "maybe" whose ONLY reason is that size is unknown.
+  #     In the final CSV these carry the label below.
+  # "Maybe" companies that are likely too big, or whose website does not
+  # say who makes the product, do not go forward.
+  size_unknown_label: "maybe: confirm headcount before outreach"
 
   # "Likely too big" flag. Some companies never state a headcount but
   # give other clues that they are well over the size limit. Such a
