@@ -131,6 +131,12 @@ food_safety_terms:
   - "FSSC 22000"
   - "ISO 22000"
   - "GFSI"
+  # The same schemes written out in full. Some websites never use the
+  # abbreviation, so the short form alone misses them.
+  - "British Retail Consortium"
+  - "Safe Quality Food"
+  - "Global Food Safety Initiative"
+  - "Food Safety System Certification"
   - "HACCP"
   - "GMP"
   - "cGMP"
@@ -252,6 +258,14 @@ offer:
   # say who makes the product, do not go forward.
   size_unknown_label: "maybe: confirm headcount before outreach"
 
+  # "Likely too big" flag. Some companies never state a headcount but
+  # give other clues that they are well over the size limit. Such a
+  # company is NOT excluded. It is only marked so a person can review it.
+  likely_too_big_flag:
+    plants_at_least: 2             # two or more plants/factories
+    facility_sq_ft_at_least: 100000  # one very large facility
+    excludes_company: false
+
 # ---------- 2a. Step 6: decision maker finder ----------
 decision_maker:
   # Step 6 runs on:
@@ -265,6 +279,7 @@ decision_maker:
     - "postconsumerbrands.com"
     - "griffithfoods.com"
     - "greatlakescheese.com"
+    - "hometownfoodcompany.com"
 
   # Who we want, most wanted first. The first kind found is the contact.
   # Each kind lists words that identify it in a job title.
@@ -287,14 +302,6 @@ decision_maker:
     - "management"
     - "staff"
     - "meet"
-
-  # "Likely too big" flag. Some companies never state a headcount but
-  # give other clues that they are well over the size limit. Such a
-  # company is NOT excluded. It is only marked so a person can review it.
-  likely_too_big_flag:
-    plants_at_least: 2             # two or more plants/factories
-    facility_sq_ft_at_least: 100000  # one very large facility
-    excludes_company: false
 
 # ---------- 2b. Word lists used by the Judge step (Step 5) ----------
 # Step 5 is plain rules in code. These lists are the only "knowledge"
@@ -377,6 +384,23 @@ scoring_rules:
       - "FSSC 22000"
       - "ISO 22000"
       - "GFSI"
+      - "British Retail Consortium"
+      - "Safe Quality Food"
+      - "Global Food Safety Initiative"
+      - "Food Safety System Certification"
+
+# ---------- 3c. Scoring (Step 7) ----------
+# Step 7 is plain rules in code. Each company gets points for the facts
+# below, and the reasons are written next to the score.
+#   - Signal points come from the "signals" list above.
+#   - A weak signal counts in full. Strength is not used.
+#   - Ranking: highest score first. Ties: top-priority companies first,
+#     then fits, then alphabetical.
+scoring:
+  points:
+    no_audited_certification_found: 2
+    verdict_is_fit: 3
+    contact_found: 1
 
 # ---------- 4. WHO would we contact there? ----------
 # Job titles only. The pipeline does not collect names from LinkedIn.

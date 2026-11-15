@@ -19,7 +19,7 @@ Most lead lists answer "who *could* buy?" This pipeline also answers "who has a 
 | 4 | Signal | Look for big-retailer, export and new-product signals on the saved pages, each graded strong or weak | Signals tell us who needs help now | Done |
 | 5 | Judge | Fit / maybe / no by fixed rules in code, with the rule and the exact sentence behind each verdict | So every decision can be checked by a person, and re-run by anyone | Done |
 | 6 | Decision maker finder | Find a named QA, operations or owner contact on the company's own website, with the quote that proves it | A lead is only useful with someone to contact | Done |
-| 7 | Score + CSV | Score each company and save to a CSV (later a Google Sheet) | So the best leads are at the top | Not started |
+| 7 | Score + CSV | Score each company by fixed rules and save a ranked CSV with reasons and evidence | So the best leads are at the top, and each score can be explained | Done |
 
 ## Step 1 in detail: where the list comes from
 
@@ -262,7 +262,7 @@ The 16 other maybes (likely too big, or the website does not say who makes the p
 
 **Goal:** for each company going forward, name the person to contact, in this order of preference: QA or food safety manager, then head of operations, then owner or founder. An owner or founder is a valid contact at a small company.
 
-**Which companies:** the 4 fits, plus the "size unknown" maybes that also match the top-priority rule, minus three very large companies removed by hand (listed in the settings file). That is **11 companies**.
+**Which companies:** the 4 fits, plus the "size unknown" maybes that also match the top-priority rule, minus very large companies removed by hand (listed in the settings file). That was 11 companies when Step 6 ran, and **10** after one more large company was removed.
 
 **Where it looks:**
 
@@ -281,18 +281,71 @@ The 16 other maybes (likely too big, or the website does not say who makes the p
 
 Otherwise the company shows "not found". **No name or role is ever guessed.**
 
-**Result: a contact was found for 3 of the 11 companies.** 5 contacts checked, 0 deleted.
+**Result: a contact was found for 3 of the 10 companies.** 5 contacts checked, 0 deleted.
 
 | Kind of contact | Companies |
 |-----------------|-----------|
 | QA / food safety | 0 |
 | Operations | 2 |
 | Owner / founder | 1 |
-| Not found | 8 |
+| Not found | 7 |
 
 **What this shows, honestly:** small food manufacturers mostly do not name their staff on their websites, and none of these 11 named a QA or food safety person. Two more sites mention a founder by first name or in a story, but never give a title next to the name, so the rules correctly leave them as "not found". For a real campaign the missing contacts would come from a phone call or a paid contact database, which is outside what this free pipeline does.
 
 **Privacy:** real names are personal data. They are saved only in `data/step6_contacts.csv`, which is never uploaded. The repo has `sample_output/step6_contacts_sample.csv`, the same rows with every name replaced by "[name redacted]".
+
+## Step 7 in detail: score and final list
+
+**No AI reading in this step.** `step7_score.py` adds up facts that earlier steps already tied to a quote, and writes the reasons next to the score so nobody has to trust the number on its own.
+
+**How the score is built** (all points are in the settings file):
+
+| Fact | Points |
+|------|--------|
+| Recall | 3 |
+| Sells to a big retailer | 3 |
+| Exports | 2 |
+| New product launch | 1 |
+| Open QA or food safety job | 1 |
+| No audited certification found | 2 |
+| Verdict is "fit" (so fit ranks above maybe) | 3 |
+| A named contact was found | 1 |
+
+A weak signal counts in full. Signal strength is not used, because almost no signal on a website carries a date.
+
+**Ranking:** highest score first. Ties: top-priority companies first, then fits, then alphabetical.
+
+**Which companies:** the 10 that came out of Step 6 (4 fits and 6 "size unknown" maybes that match the top-priority rule, after four very large companies were removed by hand).
+
+**The final file has, for every company:** rank, verdict, label, top-priority flag, score, the reasons for the score, and the evidence quotes for each fact (makes it itself, recall, retailer, export, new product, certification, contact).
+
+- `data/step7_final_leads.csv` has the real contact names and is never uploaded.
+- `sample_output/final_leads_sample.csv` is the same list with every name replaced by "[name redacted]".
+
+**Final ranked list:**
+
+| Rank | Company | Score | Label | Top priority | Contact |
+|------|---------|-------|-------|--------------|---------|
+| 1 | Nats Nuts LLC | 11 | maybe: confirm headcount before outreach | yes | operations |
+| 2 | Straus Family Creamery | 9 | maybe: confirm headcount before outreach | yes | not found |
+| 3 | Rose and Shore, Inc. | 9 | fit | no | not found |
+| 4 | Deano's Pasta | 8 | maybe: confirm headcount before outreach | yes | not found |
+| 5 | Pink House Alchemy, LLC | 8 | maybe: confirm headcount before outreach | yes | operations |
+| 6 | Stuffed Foods LLC | 8 | maybe: confirm headcount before outreach | yes | not found |
+| 7 | Wondermade LLC | 8 | maybe: confirm headcount before outreach | yes | owner / founder |
+| 8 | Boichik Bagels, Inc. | 8 | fit | no | not found |
+| 9 | Everything Sprouts, LLC | 8 | fit | no | not found |
+| 10 | Produce Innovations | 6 | fit | no | not found |
+
+**How this compares with the goal of 50 companies.** The pipeline started with 449 companies and ends with 10. Each step's loss is counted and explained above; the two largest are the free website finder (95 of 449) and the fact that small manufacturers rarely publish their size or staff. Nothing was invented to fill the gap. The fixes are known and named: a search service for websites, a longer recall look-back, and a contact database or a phone call for headcount and names.
+
+## A bug found and fixed: certification names written in full
+
+While reading for Step 6, one company's About page said it had held "British Retail Consortium Global Standard for Food Safety certification since 2010". The keyword list only had the abbreviation "BRC", so the certification was missed, and Rose and Shore was wrongly marked top priority (which requires *no* certification).
+
+**The fix:** the full names were added to the keyword list alongside the abbreviations (British Retail Consortium, Safe Quality Food, Global Food Safety Initiative, Food Safety System Certification), and the certification and top-priority flags were re-run for every company. Rose and Shore is now correctly shown as certified and is no longer top priority. Two other companies gained a second match for a certification they were already credited with.
+
+**What it shows:** a keyword list only finds the spellings someone thought of. The bug was caught because a person-style read happened to pass over the sentence. This is the main weakness of the keyword parts of the pipeline, and the reason every flag keeps its evidence next to it.
 
 ## Rules that apply across Steps 5 and 7
 
@@ -332,6 +385,7 @@ python step6_collect_team.py
 python step6_find_candidates.py
 # (the reader fills data/step6_answers/ following prompts/step6_contact_instructions.md)
 python step6_fill_contacts.py
+python step7_score.py
 ```
 
 ## First test market
@@ -361,6 +415,7 @@ The settings file is currently set up for this test:
 | `step6_collect_team.py` | Step 6 part 1: picks the companies and saves a linked Team page if there is one |
 | `step6_find_candidates.py` | Step 6 part 2: pulls out lines that might name a decision maker |
 | `step6_fill_contacts.py` | Step 6 part 3: checks every contact, picks the best, writes the redacted sample |
+| `step7_score.py` | Step 7: scores, ranks and writes the final CSV plus the redacted sample |
 | `prompts/` | The instructions the reader (Claude in-session now, the API later) follows |
 | `sources/` | One plug-in file per source. `openfda_recalls.py` is the FDA one. `__init__.py` is the list of available sources. |
 | `requirements.txt` | The two free Python helpers the project needs |
@@ -390,4 +445,6 @@ The settings file is currently set up for this test:
 - **Step 4:** Searched the saved pages for retailer, export and new-product signals. 35 of 89 companies show at least one; 49 checks, 0 failed. Added the "top priority" rule and the "likely too big" flag to the settings file.
 - **Step 5:** Judged all companies by fixed rules in code: 4 fit, 49 maybe, 36 no, 6 not read (a founding year does not count as a size fact). 37 companies go forward: the 4 fits plus 33 maybes whose only gap is unknown size. Renumbered the plan: 5 Judge, 6 Decision maker finder, 7 Score + CSV.
 - **Step 6:** Looked for a named contact at 11 companies using only their own websites. Found one for 3 (2 operations, 1 founder), each with a checked quote. Real names stay in `data/`; the repo has a redacted sample.
+- **Certification fix:** Added full certification names to the keyword list after one was missed; re-ran the flags. One company lost its wrong top-priority mark.
+- **Step 7:** Scored and ranked the final 10 companies by fixed rules, with reasons and evidence for each. Final list in `data/`, redacted sample in `sample_output/`.
 - **Swappable source:** Moved the FDA code into a plug-in so a new market can use a different source by changing one line in the settings file.
