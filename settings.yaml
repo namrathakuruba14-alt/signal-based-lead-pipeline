@@ -271,7 +271,8 @@ decision_maker:
   # Step 6 runs on:
   #   - every "fit"
   #   - "size unknown" maybes that also match the top-priority rule
-  #     (big retailer or export, and no audited certification found)
+  #     (big retailer or export, and no certification found on the
+  #     pages checked)
   # minus any company listed here. These were removed by a person because
   # they are known to be very large, even though their saved pages never
   # state a headcount.
@@ -365,14 +366,15 @@ signals:
 scoring_rules:
   top_priority:
     description: >
-      Had a recall, AND sells to a big retailer or exports, AND no food
-      safety certification was found on its website. This company has a
-      proven problem, has customers who demand certification, and shows
-      no sign of holding one. That is exactly the gap our client fills.
+      Had a recall, AND sells to a big retailer or exports, AND no
+      certification found on the pages checked. This company has a proven
+      problem and customers who demand certification, and the pages we
+      saved do not mention one. This does not mean the company is
+      uncertified. It may hold a certification those pages do not mention.
     requires_all:
       - "recall"
       - "big retailer OR export"
-      - "no certification term found"
+      - "no certification found on the pages checked"
     # Which terms count as a food safety CERTIFICATION for this rule.
     # (Kosher, Organic, HACCP and GMP are not counted: they are diet
     # labels or internal programmes, not the audited schemes that big

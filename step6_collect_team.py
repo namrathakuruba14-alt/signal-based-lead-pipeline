@@ -52,7 +52,8 @@ def select_companies(settings):
         has_certification = any(term in company["food_safety_terms"].split("; ")
                                 for term in certifications)
         # In this market every company has a recall, so top priority comes
-        # down to: sells to a big retailer or exports, and no certification.
+        # down to: sells to a big retailer or exports, and no certification
+        # found on the pages checked.
         top_priority = bool(company["signal_big_retailer"] or company["signal_export"]) \
             and not has_certification
         company["top_priority"] = "yes" if top_priority else "no"

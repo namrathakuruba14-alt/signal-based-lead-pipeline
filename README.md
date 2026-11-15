@@ -201,22 +201,24 @@ The recall signal came with the source list, and QA job openings were captured i
 
 ## Named scoring rule: "top priority"
 
-**The rule:** a company is top priority when it has **a recall**, AND **sells to a big retailer or exports**, AND **no food safety certification was found** on its website.
+**The rule:** a company is top priority when it has **a recall**, AND **sells to a big retailer or exports**, AND **no certification found on the pages checked**.
+
+**This does not mean the company is uncertified.** It means none of the few pages saved from its website mentions an audited certification. A company may hold one and simply not say so there.
 
 **The reasoning:**
 
 - A **recall** is proof of a real food safety problem, with a date.
 - **Big retailers and export markets** are the customers who demand audited certification. A company selling to them is under pressure to have one, and has the most to lose if it can't show one.
-- **No certification found** means the gap is still open. A company that already displays SQF or BRC has probably solved this.
+- **No certification found on the pages checked** suggests the gap may still be open. A company that already displays SQF or BRC has probably solved this.
 
 Together these describe a company with a proven problem, demanding customers and no visible answer, which is exactly who the client's food safety partners can help.
 
 **Two cautions built into how it is used:**
 
-- "No certification found" means not found on the pages we saved. A company may hold one and not mention it. So the rule ranks a company for attention; it does not state a fact about them.
+- "No certification found on the pages checked" is a statement about this search, not about the company. So the rule ranks a company for attention; it does not state a fact about them. Anyone using the list should confirm with the company before assuming anything.
 - Only audited schemes count as a certification here (SQF, BRC/BRCGS, FSSC 22000, ISO 22000, GFSI). Kosher, Organic, HACCP and GMP do not, because they are diet labels or internal programmes rather than what retailers ask for. The list is in the settings file.
 
-In this test market every company has a recall, because the list came from the FDA. So here the rule comes down to "retailer or export, and no certification found". A first count gives 21 companies, 12 of which say they manufacture themselves. The final list is produced in Step 7 (Score + CSV).
+In this test market every company has a recall, because the list came from the FDA. So here the rule comes down to "retailer or export, and no certification found on the pages checked". A first count gives 21 companies, 12 of which say they manufacture themselves. The final list is produced in Step 7 (Score + CSV).
 
 ## Step 5 in detail: the verdict
 
@@ -307,7 +309,7 @@ Otherwise the company shows "not found". **No name or role is ever guessed.**
 | Exports | 2 |
 | New product launch | 1 |
 | Open QA or food safety job | 1 |
-| No audited certification found | 2 |
+| No certification found on the pages checked (this does not mean the company is uncertified) | 2 |
 | Verdict is "fit" (so fit ranks above maybe) | 3 |
 | A named contact was found | 1 |
 

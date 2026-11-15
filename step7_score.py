@@ -11,7 +11,8 @@ How the score is built (all points are in settings.yaml):
         recall, big retailer, export, new product, open QA job
       A weak signal counts in full. Signal strength is not used, because
       almost no signal on a website carries a date.
-    + points if no audited food safety certification was found
+    + points if no audited food safety certification was found on the
+      pages checked (which does not mean the company is uncertified)
     + points if the verdict is "fit" (so fit ranks above maybe)
     + points if a named contact was found
 
@@ -34,6 +35,12 @@ from pathlib import Path
 
 from step6_collect_team import load_settings
 from step6_fill_contacts import REDACTED, redact
+
+# Careful wording. We only looked at a few saved pages of each website,
+# so "not found" is a statement about our search, not about the company.
+NOT_FOUND_WORDING = "no certification found on the pages checked"
+NOT_FOUND_NOTE = ("This does not mean the company is uncertified. "
+                  "It may hold a certification that these pages do not mention.")
 
 # Which column shows each signal. The left side is the signal's id in
 # the "signals" list in settings.yaml.
@@ -72,7 +79,8 @@ def score(company, settings):
     certifications, _ = certifications_found(company, settings)
     if not certifications:
         total += extra["no_audited_certification_found"]
-        reasons.append(f"no audited certification found +{extra['no_audited_certification_found']}")
+        reasons.append("no certification found on the pages checked "
+                       f"+{extra['no_audited_certification_found']}")
 
     if company["verdict"] == "fit":
         total += extra["verdict_is_fit"]
@@ -123,8 +131,9 @@ def main():
             "new_product": company["signal_new_product"],
             "evidence_new_product": company["signal_new_product_evidence"],
             "open_qa_jobs": company["open_qa_jobs"],
-            "audited_certifications_found": "; ".join(certifications) or "none found",
+            "audited_certifications_found": "; ".join(certifications) or NOT_FOUND_WORDING,
             "evidence_certification": " | ".join(certification_lines),
+            "certification_note": "" if certifications else NOT_FOUND_NOTE,
             "size_clues": company["size_clues"],
             "contact_kind": company["contact_kind"],
             "contact_name": company["contact_name"],
