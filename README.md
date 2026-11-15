@@ -18,7 +18,7 @@ Most lead lists answer "who *could* buy?" This pipeline also answers "who has a 
 | 3 | Enrich | 3a: find and verify each company's website. 3b: read the website: what they make, whether they make it themselves, size clues, food safety terms, QA jobs | To judge fit we need to know what the company actually does | Done |
 | 4 | Signal | Look for big-retailer, export and new-product signals on the saved pages, each graded strong or weak | Signals tell us who needs help now | Done |
 | 5 | Judge | Fit / maybe / no by fixed rules in code, with the rule and the exact sentence behind each verdict | So every decision can be checked by a person, and re-run by anyone | Done |
-| 6 | Decision maker finder | Find the right role to contact at each company | A lead is only useful with someone to contact | Not started |
+| 6 | Decision maker finder | Find a named QA, operations or owner contact on the company's own website, with the quote that proves it | A lead is only useful with someone to contact | Done |
 | 7 | Score + CSV | Score each company and save to a CSV (later a Google Sheet) | So the best leads are at the top | Not started |
 
 ## Step 1 in detail: where the list comes from
@@ -258,6 +258,42 @@ In this test market every company has a recall, because the list came from the F
 
 The 16 other maybes (likely too big, or the website does not say who makes the product) do not go forward.
 
+## Step 6 in detail: who to contact
+
+**Goal:** for each company going forward, name the person to contact, in this order of preference: QA or food safety manager, then head of operations, then owner or founder. An owner or founder is a valid contact at a small company.
+
+**Which companies:** the 4 fits, plus the "size unknown" maybes that also match the top-priority rule, minus three very large companies removed by hand (listed in the settings file). That is **11 companies**.
+
+**Where it looks:**
+
+1. The pages already saved in Step 3b, About first.
+2. One Team or Leadership page, only if the website links to one and it is not saved already. This meant at most two polite visits per site. Two of the 11 sites had such a page.
+3. Nowhere else. No LinkedIn, no people-search sites, no guessing from email formats.
+
+**Same design as Steps 3b and 4:** a script pulls out lines containing a job-title word, the reader (Claude in-session) picks out named people following `prompts/step6_contact_instructions.md`, and a script checks every contact.
+
+**The check is stricter here, because a wrong name is worse than no name.** A contact is kept only if all four hold:
+
+- the quote is on the saved page, word for word
+- the person's name is inside the quote
+- the person's title is inside the quote
+- the title contains a word for the kind of role claimed
+
+Otherwise the company shows "not found". **No name or role is ever guessed.**
+
+**Result: a contact was found for 3 of the 11 companies.** 5 contacts checked, 0 deleted.
+
+| Kind of contact | Companies |
+|-----------------|-----------|
+| QA / food safety | 0 |
+| Operations | 2 |
+| Owner / founder | 1 |
+| Not found | 8 |
+
+**What this shows, honestly:** small food manufacturers mostly do not name their staff on their websites, and none of these 11 named a QA or food safety person. Two more sites mention a founder by first name or in a story, but never give a title next to the name, so the rules correctly leave them as "not found". For a real campaign the missing contacts would come from a phone call or a paid contact database, which is outside what this free pipeline does.
+
+**Privacy:** real names are personal data. They are saved only in `data/step6_contacts.csv`, which is never uploaded. The repo has `sample_output/step6_contacts_sample.csv`, the same rows with every name replaced by "[name redacted]".
+
 ## Rules that apply across Steps 5 and 7
 
 These live in the settings file, so they can be changed per market.
@@ -292,6 +328,10 @@ python step4_find_candidates.py
 # (the reader fills data/step4_answers/ following prompts/step4_signal_instructions.md)
 python step4_fill_signals.py
 python step5_judge.py
+python step6_collect_team.py
+python step6_find_candidates.py
+# (the reader fills data/step6_answers/ following prompts/step6_contact_instructions.md)
+python step6_fill_contacts.py
 ```
 
 ## First test market
@@ -318,6 +358,9 @@ The settings file is currently set up for this test:
 | `step4_find_candidates.py` | Step 4 part 1: pulls out lines that might be a signal |
 | `step4_fill_signals.py` | Step 4 part 2: quote check and strong/weak grading |
 | `step5_judge.py` | Step 5: fit / maybe / no by fixed rules, with the rule and quote for each |
+| `step6_collect_team.py` | Step 6 part 1: picks the companies and saves a linked Team page if there is one |
+| `step6_find_candidates.py` | Step 6 part 2: pulls out lines that might name a decision maker |
+| `step6_fill_contacts.py` | Step 6 part 3: checks every contact, picks the best, writes the redacted sample |
 | `prompts/` | The instructions the reader (Claude in-session now, the API later) follows |
 | `sources/` | One plug-in file per source. `openfda_recalls.py` is the FDA one. `__init__.py` is the list of available sources. |
 | `requirements.txt` | The two free Python helpers the project needs |
@@ -346,4 +389,5 @@ The settings file is currently set up for this test:
 - **Step 3b:** Saved 302 pages from 89 websites, read them in 5 batches in-session, and quote-checked every answer: 261 quotes, 0 failed. 53 companies say they manufacture themselves.
 - **Step 4:** Searched the saved pages for retailer, export and new-product signals. 35 of 89 companies show at least one; 49 checks, 0 failed. Added the "top priority" rule and the "likely too big" flag to the settings file.
 - **Step 5:** Judged all companies by fixed rules in code: 4 fit, 49 maybe, 36 no, 6 not read (a founding year does not count as a size fact). 37 companies go forward: the 4 fits plus 33 maybes whose only gap is unknown size. Renumbered the plan: 5 Judge, 6 Decision maker finder, 7 Score + CSV.
+- **Step 6:** Looked for a named contact at 11 companies using only their own websites. Found one for 3 (2 operations, 1 founder), each with a checked quote. Real names stay in `data/`; the repo has a redacted sample.
 - **Swappable source:** Moved the FDA code into a plug-in so a new market can use a different source by changing one line in the settings file.

@@ -252,6 +252,42 @@ offer:
   # say who makes the product, do not go forward.
   size_unknown_label: "maybe: confirm headcount before outreach"
 
+# ---------- 2a. Step 6: decision maker finder ----------
+decision_maker:
+  # Step 6 runs on:
+  #   - every "fit"
+  #   - "size unknown" maybes that also match the top-priority rule
+  #     (big retailer or export, and no audited certification found)
+  # minus any company listed here. These were removed by a person because
+  # they are known to be very large, even though their saved pages never
+  # state a headcount.
+  dropped_by_hand:
+    - "postconsumerbrands.com"
+    - "griffithfoods.com"
+    - "greatlakescheese.com"
+
+  # Who we want, most wanted first. The first kind found is the contact.
+  # Each kind lists words that identify it in a job title.
+  # An owner or founder is a valid contact at a small company.
+  role_order:
+    - kind: "QA / food safety"
+      title_words: ["quality", "food safety", "QA", "QC", "compliance", "regulatory"]
+    - kind: "operations"
+      title_words: ["operations", "COO", "plant manager", "production manager", "general manager"]
+    - kind: "owner / founder"
+      title_words: ["owner", "founder", "co-founder", "president", "CEO", "proprietor", "chief executive"]
+
+  # Besides the pages already saved, look for ONE page of this kind,
+  # only if the website links to it and it is not saved yet.
+  team_page_words:
+    - "team"
+    - "leadership"
+    - "our people"
+    - "our-people"
+    - "management"
+    - "staff"
+    - "meet"
+
   # "Likely too big" flag. Some companies never state a headcount but
   # give other clues that they are well over the size limit. Such a
   # company is NOT excluded. It is only marked so a person can review it.
